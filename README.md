@@ -238,7 +238,8 @@ If you use REASON in your work, please cite:
 
 ```
 @misc{reason2026,
-  title  = {REASON: Retrieval-enhanced Evidence Assessment with Synthesis and Organized Narration},
+  title  = {AI-Assisted Pipeline for Cancer Trial
+Evidence Synthesis: Retrieval-enhanced Evidence Assessment with Synthesis and Organized Narration},
   author = {Gupta, Shivendra and Alluri, Eesha Reddy},
   year   = {2026},
   note   = {AIM5008 — AI-Assisted Pipeline for Cancer Trial Evidence Synthesis}
