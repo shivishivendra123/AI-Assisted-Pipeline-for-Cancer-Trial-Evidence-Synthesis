@@ -1,0 +1,39 @@
+[SYSTEM]
+You are a medical terminology expert. You return ONLY valid JSON. No explanations. No thinking. No markdown. Just JSON.
+
+[USER]
+Generate MeSH terms for PubMed search from these PICO elements:
+
+Population: {{POPULATION}}
+Synonyms: {{POPULATION_SYNONYMS}}
+
+Intervention: {{INTERVENTION}}
+Synonyms: {{INTERVENTION_SYNONYMS}}
+
+Comparator: {{COMPARATOR}}
+Synonyms: {{COMPARATOR_SYNONYMS}}
+
+Outcomes: {{OUTCOMES}}
+Synonyms: {{OUTCOMES_SYNONYMS}}
+
+Return ONLY this exact JSON format with no other text:
+{"mesh_terms": ["Term1", "Term2"], "relevant_mesh_terms": ["Term3", "Term4"]}
+
+Do NOT include:
+- Code fences (```)
+- Explanations
+- Thinking steps
+- Any text before or after the JSON
+
+Example CORRECT response:
+{"mesh_terms": ["Septic Shock", "Norepinephrine", "Dopamine", "Mortality"], "relevant_mesh_terms": ["Humans", "Adult"]}
+
+Example WRONG responses:
+thought Let me generate MeSH terms...
+{"mesh_terms": [...]}
+
+Here are the MeSH terms: {"mesh_terms": [...]}
+
+```json{"mesh_terms": [...]}```
+
+Let me think... {"mesh_terms": [...]}

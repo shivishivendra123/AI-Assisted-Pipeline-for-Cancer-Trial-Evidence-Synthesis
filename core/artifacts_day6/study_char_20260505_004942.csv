@@ -1,0 +1,4 @@
+study_id,first_author,year,journal,country_or_setting,population_description,sample_size_total,intervention_name,comparator_name
+38471061,,,,,Adults with FLT3-ITD AML in first remission who underwent allogeneic hematopoietic cell transplantation (HCT).,356,Gilteritinib maintenance (120 mg once daily for 24 months),Placebo
+32673171,,,,,Adult patients with FLT3-ITD-positive acute myeloid leukemia in complete hematologic remission after allogeneic hematopoietic stem cell transplantation.,83,Sorafenib maintenance therapy,Placebo
+39775763,,,,,Adults with FLT3-ITD-mutated acute myeloid leukemia (AML) who have undergone hematopoietic cell transplantation (HCT).,,gilteritinib maintenance therapy,placebo

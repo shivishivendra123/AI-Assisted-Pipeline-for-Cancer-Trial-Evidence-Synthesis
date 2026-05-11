@@ -1,0 +1,40 @@
+{
+ "step 1": "This search focuses on FLT3-ITD acute myeloid leukemia patients undergoing allogeneic stem cell transplantation, investigating tyrosine kinase inhibitor maintenance therapy. Key outcomes include relapse-free survival, overall survival, and graft-versus-host disease, as highlighted in the PICO and reference papers.",
+ "step 2": {
+ "CORE_CONDITIONS": [
+ "FLT3-ITD AML",
+ "acute myeloid leukemia",
+ "allogeneic stem cell transplantation"
+ ],
+ "CORE_TREATMENTS": [
+ "tyrosine kinase inhibitor",
+ "FLT3 inhibitor",
+ "maintenance therapy"
+ ],
+ "CORE_OUTCOMES": [
+ "relapse-free survival",
+ "overall survival",
+ "graft-versus-host disease"
+ ]
+ },
+ "step 3": {
+ "EXPAND_CONDITIONS": [
+ "FLT3 internal tandem duplication",
+ "allogeneic HCT",
+ "allo-HSCT",
+ "hematopoietic cell transplantation"
+ ],
+ "EXPAND_TREATMENTS": [
+ "gilteritinib",
+ "sorafenib",
+ "quizartinib",
+ "post-transplant maintenance"
+ ],
+ "EXPAND_OUTCOMES": [
+ "RFS",
+ "OS",
+ "relapse incidence",
+ "GVHD"
+ ]
+ }
+}

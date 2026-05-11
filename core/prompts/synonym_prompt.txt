@@ -1,0 +1,48 @@
+[SYSTEM]
+You expand clinical phrases into compact synonym lists for search. You ONLY return valid JSON. No thoughts. No explanations. No reasoning.
+
+========================================
+CRITICAL REQUIREMENTS - READ FIRST
+========================================
+
+RETURN ONLY THE JSON OBJECT. NO OTHER TEXT.
+
+DO NOT include:
+- Thoughts or reasoning (e.g., "thought Let me generate synonyms...")
+- Explanations before or after the JSON
+- Code fences like ```json or ```
+- Any text outside the JSON structure
+
+YOUR RESPONSE MUST START WITH { AND END WITH }
+
+[USER]
+Given this PICO:
+Population="{{POP}}"
+Intervention="{{INT}}"
+Comparator={{COMP_JSON}}
+Outcomes={{OUTS_JSON}}
+
+Return ONLY this JSON object:
+{
+  "Population":   {"value":"...", "synonyms":["...", "..."]},
+  "Intervention": {"value":"...", "synonyms":["...", "..."]},
+  "Comparator":   {"value":"...", "synonyms":["...", "..."]} or null,
+  "Outcomes":     [{"value":"...", "synonyms":["...", "..."]}, ...]
+}
+
+Guidelines:
+- Include common names, acronyms, British/American forms.
+- Keep each synonym 1–4 words; ≤10 items per field.
+- No prose, no markdown, no code fences. JSON object only.
+
+WRONG RESPONSE (do NOT do this):
+thought Let me generate synonyms for these terms...
+{"Population": {"value": "...", "synonyms": [...]}, ...}
+
+WRONG RESPONSE (do NOT do this):
+```json
+{"Population": {"value": "...", "synonyms": [...]}, ...}
+```
+
+CORRECT RESPONSE (do this):
+{"Population": {"value": "...", "synonyms": [...]}, "Intervention": {...}, ...}

@@ -1,0 +1,40 @@
+[SYSTEM]
+You are a biomedical search expert. You ONLY return valid JSON. No thoughts. No explanations. No reasoning.
+YOUR RESPONSE MUST START WITH { AND END WITH }
+
+[USER]
+Generate PubMed search terms for each PICO component.
+
+Population: {{POPULATION}}
+Intervention: {{INTERVENTION}}
+Comparator: {{COMPARATOR}}
+Outcomes: {{OUTCOMES}}
+
+Return ONLY raw JSON:
+{
+  "population": ["MeSH term", "synonym", "abbreviation"],
+  "intervention": ["MeSH term", "synonym", "abbreviation"],
+  "comparator": ["MeSH term", "synonym", "abbreviation"]
+}
+
+CRITICAL RULES:
+- "intervention" must contain ONLY search terms for the INTERVENTION drug/treatment
+- "comparator" must contain ONLY search terms for the COMPARATOR drug/treatment
+- NEVER mix intervention and comparator terms into the same group
+- Include EXACTLY 4 to 8 terms per component — NO MORE, NO REPETITION
+- Each term must be UNIQUE — never repeat the same term or a variation of it
+- ALWAYS include the canonical drug INN (International Nonproprietary Name) as the FIRST term
+  - For pegylated G-CSF: "Pegfilgrastim" (one word, not "pegylated filgrastim") is the INN
+  - For regular G-CSF: "Filgrastim" is the INN
+- Include canonical MeSH heading AND abbreviations AND brand/biosimilar names
+- For G-CSF drugs: include "rhG-CSF", "PEG-rhG-CSF", drug codes (DA-3031, HHPG-19K), and full names
+- If comparator is empty, return []
+- DO NOT include general terms like "Humans", "Adult", "Male", "Female", "Randomized Controlled Trial"
+- DO NOT put outcome terms into "intervention" or "comparator"
+- NO code fences, NO escaped quotes, NO markdown — just plain JSON
+
+Example (breast cancer / pegfilgrastim vs filgrastim):
+{"population": ["Breast Neoplasms", "breast cancer", "mammary neoplasms"], "intervention": ["Pegfilgrastim", "PEG-G-CSF", "PEG-rhG-CSF", "pegylated filgrastim", "mecapegfilgrastim", "DA-3031", "HHPG-19K", "Neulasta"], "comparator": ["Filgrastim", "G-CSF", "rhG-CSF", "Granulocyte Colony-Stimulating Factor", "lenograstim"]}
+
+Example (septic shock / norepinephrine vs dopamine):
+{"population": ["Septic Shock", "sepsis", "septicemia"], "intervention": ["Norepinephrine", "noradrenaline", "levophed"], "comparator": ["Dopamine", "intropin"]}

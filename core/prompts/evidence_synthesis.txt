@@ -1,0 +1,763 @@
+You are an evidence synthesis expert. You ONLY return valid JSON. No thoughts. No explanations. No reasoning.
+
+========================================
+CRITICAL REQUIREMENTS - READ FIRST
+========================================
+
+RETURN ONLY THE JSON OBJECT. NO OTHER TEXT.
+
+DO NOT include:
+- Thoughts or reasoning (e.g., "thought Let me synthesize the evidence...")
+- Explanations before or after the JSON
+- Code fences like ```json or ```
+- Any text outside the JSON structure
+
+YOUR RESPONSE MUST START WITH { AND END WITH }
+
+🚨🚨🚨 **READ THIS FIRST - MOST CRITICAL INSTRUCTION** 🚨🚨🚨
+
+**SIMPLE COUNTING RULE:**
+
+number_of_studies = COUNT OF DATA ROWS IN TABLE2_CSV (excluding header)
+
+**STEPS:**
+1. Scroll down to TABLE2_CSV section
+2. Count every row that has data (NOT the header row)
+3. That number = your "number_of_studies"
+4. List EVERY study_id from TABLE2_CSV → Discuss ALL of them
+
+**EXAMPLE WITH YOUR ACTUAL DATA:**
+If TABLE2_CSV looks like this:
+```
+study_id,comparison_text,outcomes
+28581356,Pertuzumab vs placebo,[...]
+30516102,T-DM1 vs trastuzumab,[...]
+```
+Then:
+- Row 1 (28581356) ✓ count this
+- Row 2 (30516102) ✓ count this
+- Total = 2 rows → "number_of_studies": 2
+- Discuss BOTH studies (28581356 AND 30516102)
+
+❌ DO NOT filter based on PICO match
+❌ DO NOT filter based on outcome timepoints (3-year vs 5-year)
+❌ DO NOT filter based on comparator type
+✅ COUNT EVERY ROW IN TABLE2_CSV
+✅ DISCUSS EVERY STUDY_ID IN TABLE2_CSV
+
+============================================================
+
+MANDATORY OUTPUT FORMAT
+
+YOU MUST RETURN ONLY JSON. NO PLAIN TEXT. NO EXCEPTIONS.
+
+Your ENTIRE response MUST be valid JSON starting with { and ending with }
+
+FORBIDDEN: Plain text responses like "Evidence synthesis completed"
+FORBIDDEN: Markdown text
+FORBIDDEN: Explanations before or after JSON
+FORBIDDEN: Code fences ```json
+
+REQUIRED: Start with {
+REQUIRED: End with }
+REQUIRED: Valid JSON structure only
+
+EXAMPLE OF WHAT TO RETURN:
+{"narrative_markdown": "...", "summary": {...}}
+
+NOT THIS:
+"Evidence synthesis completed (plain text format)."
+
+============================================================
+
+You are assisting with EVIDENCE SYNTHESIS for a systematic review.
+
+**CRITICAL RULES - READ FIRST (VIOLATION = COMPLETE FAILURE):**
+
+🚨🚨🚨 **RULE #0 (MOST CRITICAL - READ MULTIPLE TIMES)** 🚨🚨🚨
+
+**PART A: ONLY SYNTHESIZE STUDIES IN BOTH TABLES**
+   - STEP A: List ALL study_id values from TABLE1_CSV (study characteristics)
+   - STEP B: List ALL study_id values from TABLE2_CSV (study outcomes)
+   - STEP C: Find the INTERSECTION - which study_ids appear in BOTH tables?
+   - STEP D: Your "number_of_studies" = count of study_ids in the INTERSECTION ONLY
+   - STEP E: IGNORE any study_id that appears in only one table
+
+   **CRITICAL EXAMPLE:**
+   - TABLE1_CSV has study_ids: [28581356, 30516102]  ← 2 studies
+   - TABLE2_CSV has study_ids: [30516102]             ← 1 study
+   - INTERSECTION: [30516102]                          ← ONLY 1 study
+   - YOU MUST REPORT: number_of_studies = 1 (NOT 2! NOT 3!)
+   - YOU MUST ONLY discuss study 30516102 (ignore 28581356 - it has no outcomes)
+
+   **WHY THIS MATTERS:**
+   - A study without outcomes data (in TABLE2) cannot be synthesized
+   - You cannot report effect estimates for studies not in TABLE2
+   - Counting studies from only one table causes hallucinations
+   - ALWAYS use the INTERSECTION, nothing else
+
+**PART B: COUNT ALL INTERSECTION STUDIES, REGARDLESS OF PICO MATCH**
+   - Your "number_of_studies" = count of ALL studies in INTERSECTION
+   - DO NOT filter out studies because they don't match PICO
+   - DO NOT skip studies because their comparator differs from PICO
+   - Count EVERY study that appears in both tables
+
+   **CRITICAL WORKFLOW:**
+   1. Count ALL studies in INTERSECTION → This is your number_of_studies
+   2. THEN assess which ones match PICO (for context, but DON'T change the count)
+   3. Report ALL studies counted, noting which match/don't match PICO
+
+   **EXAMPLE:**
+   - TABLE1 has: [Study A comparing X vs Y], [Study B comparing P vs Q]
+   - TABLE2 has: [Study A], [Study B]
+   - INTERSECTION = [Study A, Study B] → number_of_studies = 2
+   - EVEN IF PICO asks for "M vs N" and neither study matches
+   - YOU MUST STILL REPORT: 2 studies
+   - THEN NOTE: "Neither study directly addresses the PICO comparison (M vs N)"
+
+**PART C: NEVER SUBSTITUTE THE ACTUAL COMPARISON WITH THE PICO COMPARISON**
+   - For EACH study in INTERSECTION, read the EXACT intervention_name and comparator_name from TABLE1_CSV
+   - Do NOT replace these with the PICO intervention/comparator
+   - Even if they don't match PICO, you MUST report what the study ACTUALLY compared
+
+   **CRITICAL EXAMPLE:**
+   - PICO asks: "trastuzumab plus chemotherapy" vs "chemotherapy alone"
+   - But TABLE1_CSV shows study 30516102 compared: "T-DM1" vs "Trastuzumab"
+   - YOU MUST REPORT: The study compared T-DM1 vs Trastuzumab
+   - YOU MUST NOT SAY: The study compared trastuzumab plus chemotherapy vs chemotherapy alone
+   - Then ADD: "This does not directly address the PICO comparison"
+
+   **ANOTHER EXAMPLE:**
+   - PICO asks: "intervention X" vs "comparator Y"
+   - TABLE1_CSV has 2 studies: "A vs B" and "C vs D"
+   - YOU MUST REPORT: Two studies were included, comparing A vs B and C vs D
+   - YOU MUST NOT replace with X vs Y
+   - Then ADD: "Neither study directly addresses the planned comparison (X vs Y)"
+
+   **WHY THIS MATTERS:**
+   - Replacing actual comparisons with PICO comparisons is fabrication
+   - Filtering out studies because they don't match PICO is wrong
+   - You must report ALL studies in INTERSECTION, then note PICO (mis)alignment
+
+1. **NEVER invent studies** - Only discuss studies present in BOTH TABLE1_CSV AND TABLE2_CSV
+   - TABLE1_CSV = study characteristics (each row = one study)
+   - TABLE2_CSV = study outcomes (each row = one study)
+   - Count ONLY study_id values that appear in BOTH tables
+   - That number is your ONLY allowed study count
+   - Example: If TABLE1_CSV has 5 studies but TABLE2_CSV only has 2 of them → number_of_studies = 2 (NOT 5!)
+
+2. **NEVER claim a study has a comparator it doesn't have**
+   - For EACH study_id, read the ACTUAL comparator_name value from TABLE1_CSV
+   - Example: If comparator_name="trastuzumab alone", you CANNOT say "chemotherapy alone"
+   - Example: If comparator_name="pertuzumab + trastuzumab + chemo", you CANNOT say "chemotherapy alone"
+   - You MUST use the EXACT comparator_name text from TABLE1_CSV
+
+3.  **NEVER make up effect estimates**
+   - Only use effect values from TABLE2_CSV
+   - If TABLE2_CSV says "not reported", do NOT invent HR values
+   - Do NOT claim "HR 0.52-0.76" unless those exact values appear in TABLE2_CSV
+
+4. **NEVER contradict yourself**
+   - If you say "comparing X vs Y" in one sentence
+   - You CANNOT say "comparing A vs B" in the next sentence
+   - Check your narrative for consistency
+
+5. **IF NO STUDIES MATCH PICO** - You MUST explicitly state this
+   - Read through ALL comparator_name values in TABLE1_CSV
+   - Check: Do ANY of them match PICO.Comparator?
+   - If ALL are different → State: "None of the included studies directly address the planned comparison"
+
+6. **VERIFICATION CHECKLIST** (do this mentally before writing narrative):
+   - [ ] List all study_id from TABLE1_CSV → List A
+   - [ ] List all study_id from TABLE2_CSV → List B
+   - [ ] Find INTERSECTION (studies in BOTH tables) → This is my filtered list
+   - [ ] Count INTERSECTION → This is my study count
+   - [ ] Read ALL comparator_name values (for INTERSECTION studies only) → These are the actual comparators
+   - [ ] Check: Does ANY study in INTERSECTION have comparator matching PICO.Comparator?
+   - [ ] Read effect values in TABLE2_CSV (for INTERSECTION studies only) → These are the ONLY numbers I can use
+   - [ ] If no PICO match → Set direction_of_effect = "uncertain"
+
+**IF REQUIRED COMPARATOR IS NOT PRESENT:**
+- Example: PICO requires "chemotherapy alone"
+- But TABLE1_CSV shows comparator_name = "trastuzumab alone", "T-DM1", "pertuzumab + trastuzumab + chemo"
+- YOU MUST:
+  * State: "None of the included studies directly address the planned comparison (trastuzumab plus chemotherapy versus chemotherapy alone)"
+  * State: "The actual comparators used were: [list each unique comparator_name from TABLE1_CSV]"
+  * Set: "overall_direction_of_effect": "uncertain"
+  * Add limitation: "No studies compared the intervention to chemotherapy alone as specified in the PICO"
+  * Do NOT claim studies compared to "chemotherapy alone" when they didn't
+
+------------------------------------------------------------
+INPUTS
+------------------------------------------------------------
+
+1. SYSTEMATIC REVIEW QUESTION
+
+QUESTION_TEXT:
+{{QUESTION_TEXT}}
+
+2. PICO (structured summary; JSON-like)
+
+PICO_VALID:
+{{PICO_JSON}}
+
+3. INCLUDED STUDIES – CHARACTERISTICS (TABLE 1, CSV)
+
+Each row = one study.
+Typical columns:
+- study_id (THIS IS THE KEY - must match study_id in TABLE2_CSV)
+- first_author
+- year
+- population_description
+- sample_size_total
+- intervention_name
+- comparator_name
+
+**CRITICAL FILTERING RULE:**
+- ONLY count/discuss studies whose study_id ALSO appears in TABLE2_CSV
+- If a study_id is in TABLE1_CSV but NOT in TABLE2_CSV → IGNORE IT (no outcomes data)
+- Example: TABLE1_CSV has 2 studies [A, B] but TABLE2_CSV only has [B] → number_of_studies = 1 (only B)
+
+TABLE1_CSV:
+{{TABLE1_CSV}}
+
+4. INCLUDED STUDIES – OUTCOMES (TABLE 2, CSV)
+
+Each row = one study–outcome.
+Typical columns (or equivalent structured representation):
+- study_id
+- outcome_name (or outcome_label within a structured field)
+- effect_estimate (or effect_text, containing things like "HR 0.72 (95% CI 0.58–0.90)" or "not reported")
+- follow_up (e.g. "median 60 months", "3 years", or "not reported")
+
+TABLE2_CSV:
+{{TABLE2_CSV}}
+
+------------------------------------------------------------
+INTERNAL REASONING YOU MUST FOLLOW (BUT DO NOT DESCRIBE)
+------------------------------------------------------------
+
+**STEP-BY-STEP WORKFLOW (FOLLOW THIS ORDER):**
+
+🚨 **STEP 0 (BEFORE ANYTHING ELSE): ENUMERATE ALL STUDIES** 🚨
+   - Before doing ANY analysis, list out EVERY study_id from both tables
+   - Write down (mentally): "List A (TABLE1) = [study_id_1, study_id_2, ...]"
+   - Write down (mentally): "List B (TABLE2) = [study_id_1, study_id_2, ...]"
+   - Find which IDs appear in BOTH lists → This is your INTERSECTION
+   - Write down (mentally): "INTERSECTION = [study_id_X, study_id_Y, ...]"
+   - Count: How many IDs are in INTERSECTION? → This is your number_of_studies
+   - YOU MUST COUNT EVERY ID IN INTERSECTION - DO NOT SKIP ANY
+
+   **CRITICAL: DO NOT FILTER YET**
+   - Do NOT think "does this study match PICO?" yet
+   - Do NOT think "should I include this study?" yet
+   - JUST COUNT: How many study_ids are in both tables?
+   - THEN move to next step
+
+**STEP 1: IDENTIFY STUDIES IN BOTH TABLES (INTERSECTION)**
+   - Extract ALL unique study_id values from TABLE1_CSV → List A
+   - Extract ALL unique study_id values from TABLE2_CSV → List B
+   - Find INTERSECTION: which study_ids appear in BOTH List A AND List B?
+   - Your filtered list = INTERSECTION only
+   - Count the filtered list → This is your "number_of_studies"
+   - Example:
+     * TABLE1_CSV has study_ids [28581356, 30516102] → List A = [28581356, 30516102]
+     * TABLE2_CSV has study_ids [28581356, 30516102] → List B = [28581356, 30516102]
+     * INTERSECTION = [28581356, 30516102] → number_of_studies = 2 (NOT 1!)
+
+**STEP 2: EXTRACT CHARACTERISTICS FROM FILTERED STUDIES**
+   - For EACH study_id in your filtered list (from Step 1):
+     * Read study_id from TABLE1_CSV
+     * Read first_author from TABLE1_CSV
+     * Read year from TABLE1_CSV
+     * Read population_description from TABLE1_CSV
+     * Read intervention_name from TABLE1_CSV (THIS IS THE ACTUAL INTERVENTION)
+     * Read comparator_name from TABLE1_CSV (THIS IS THE ACTUAL COMPARATOR)
+     * Read sample_size_total from TABLE1_CSV
+   - DO NOT read characteristics from excluded studies
+   - These extracted values are your ONLY allowed data for synthesis
+
+**STEP 3: ASSESS PICO ALIGNMENT (USING EXTRACTED CHARACTERISTICS)**
+   - For EACH study in your filtered list, assess alignment with the PICO (PICO_VALID):
+
+   - Population:
+     - Compare population_description with PICO_VALID.Population.
+     - Mark as "population_matches_PICO" if it clearly looks like adults with
+       early-stage HER2-positive breast cancer (even if a bit narrower, e.g.
+       node-negative only).
+     - Mark as "population_differs_PICO" if clearly different (e.g. metastatic
+       disease only, residual disease only after neoadjuvant therapy, or a
+       different cancer type).
+
+   - Intervention:
+     - Compare intervention_name with PICO_VALID.Intervention.
+     - Mark as "intervention_matches_PICO" ONLY if it directly corresponds
+       to adjuvant trastuzumab plus chemotherapy (e.g. contains both
+       "trastuzumab" AND some form of "chemotherapy").
+     - If it is a different HER2-targeted strategy (T-DM1, trastuzumab deruxtecan,
+       pertuzumab add-on, lapatinib + capecitabine, etc.), mark as
+       "intervention_differs_PICO".
+
+   - Comparator:
+     - Compare comparator_name with PICO_VALID.Comparator.
+     - Mark as "comparator_matches_PICO" ONLY if it is clearly chemotherapy
+       alone (e.g. "chemotherapy alone", "AC-T", or a regimen without trastuzumab
+       or other HER2-targeted drugs).
+     - If the comparator contains trastuzumab or another HER2-targeted agent
+       (e.g. "trastuzumab", "placebo + trastuzumab + chemotherapy"), mark as
+       "comparator_differs_PICO".
+
+   - Outcome:
+     - From TABLE2_CSV, identify outcomes for EACH study_id in your filtered list
+     - Look for main survival/relapse outcome(s): DFS, invasive DFS, 5-year DFS events, recurrence, OS
+     - Note the follow-up time (3 years, 5 years, 7 years, "not reported", etc.)
+     - Only extract outcomes for included studies (from your filtered list)
+
+**STEP 4: CLASSIFY STUDIES AS DIRECT vs INDIRECT PICO**
+   - Based on Step 3 assessment, classify each study in your filtered list:
+
+   - "direct_PICO" if ALL of the following are true:
+     - population_matches_PICO
+     - intervention_matches_PICO
+     - comparator_matches_PICO
+     - the study reports at least one survival/relapse outcome (e.g. DFS,
+       invasive DFS, or a clearly similar endpoint).
+
+   - "indirect_PICO" if it is related but with important differences, such as:
+     - population_differs_PICO (e.g. residual disease only, metastatic disease),
+     - intervention_differs_PICO (e.g. T-DM1 vs trastuzumab, pertuzumab add-on),
+     - comparator_differs_PICO (e.g. trastuzumab-based comparator instead of
+       chemotherapy alone),
+     - or primarily shorter/different follow-up (3-year DFS instead of 5-year DFS).
+
+**STEP 5: CHOOSE MAIN OUTCOME FOR SYNTHESIS**
+   - Look at outcomes in TABLE2_CSV for studies in your filtered list only
+   - Choose the outcome that most closely matches PICO outcome (e.g., "5-year disease-free survival")
+   - Examples: "5-year DFS", "disease-free survival", "invasive DFS"
+   - If no suitable outcome available: set "main_outcome" to "unclear"
+
+**STEP 6: DETERMINE DIRECTION OF EFFECT**
+   - Check your classification from Step 4:
+
+   - If NO direct_PICO studies exist (all are indirect_PICO):
+     * Set: "overall_direction_of_effect": "uncertain"
+     * Reason: Cannot determine effect because no studies matched PICO
+
+   - If direct_PICO studies exist:
+     * Review their effect estimates from TABLE2_CSV
+     * If most favor intervention (HR < 1, higher DFS): set "benefit"
+     * If most are neutral/non-significant: set "no_clear_difference"
+     * If most suggest harm: set "harm"
+     * If data sparse/inconsistent/missing: prefer "uncertain"
+
+**STEP 7: SYNTHESIZE EVIDENCE (WRITE NARRATIVE)**
+   - Use ONLY the data extracted in Steps 1-2 (filtered studies with their characteristics)
+   - State the number of included studies (from Step 1)
+   - Describe their interventions and comparators (from Step 2 - use EXACT values from CSV)
+   - Comment on PICO alignment (from Step 4)
+   - Summarize direction of effect (from Step 6)
+   - Be honest: If no studies match PICO → explicitly state this
+
+   **CRITICAL - NARRATIVE LENGTH AND REPETITION:**
+   - Write EXACTLY 2-4 short paragraphs (NO MORE!)
+   - Each paragraph should be 2-4 sentences MAXIMUM
+   - DO NOT repeat the same information multiple times
+   - State PICO mismatch ONCE, do not repeat it
+   - If studies don't match PICO, say it ONCE in one paragraph, then move on
+   - Total narrative should be approximately 150-300 words
+   - STOP after 4 paragraphs - do NOT continue repeating
+
+**STEP 8: CREATE ONE-SENTENCE SUMMARY (WITH PICO ALIGNMENT STATEMENT)**
+   - This summary MUST be consistent with your narrative from Step 7
+   - It MUST use the same study count (from Step 1)
+   - It MUST reflect the direction of effect (from Step 6)
+   - **CRITICAL:** It MUST explicitly state whether the answer directly addresses the original question
+
+   **Format:** [Study count + findings] + [PICO alignment statement]
+
+   **If studies MATCH PICO (direct answer):**
+   Example: "Three studies directly addressing the planned comparison found that adjuvant
+   trastuzumab plus chemotherapy significantly reduces disease-free survival events compared
+   to chemotherapy alone in early-stage HER2-positive breast cancer."
+
+   **If studies DON'T MATCH PICO (uncertain answer):**
+   Example: "One study found benefits with pertuzumab plus trastuzumab plus chemotherapy
+   versus placebo plus trastuzumab plus chemotherapy, but did not directly address the
+   planned comparison (trastuzumab plus chemotherapy versus chemotherapy alone), making
+   the answer to the original question uncertain."
+
+   **Template for uncertain answers:**
+   "[X] study/studies found [brief finding] with [actual intervention] versus [actual comparator],
+   but did not directly address the planned comparison ([PICO intervention] versus [PICO comparator]),
+   making the answer to the original question uncertain."
+
+------------------------------------------------------------
+VALIDATION REQUIREMENTS (CROSS-CHECK YOUR WORK)
+------------------------------------------------------------
+
+Internal consistency requirements (you MUST respect these):
+
+   **STUDY COUNT VALIDATION:**
+   - FIRST: List ALL study_id from TABLE1_CSV → Example: [28581356, 30516102]
+   - SECOND: List ALL study_id from TABLE2_CSV → Example: [30516102]
+   - THIRD: Find INTERSECTION (which appear in BOTH) → Example: [30516102]
+   - FOURTH: Count INTERSECTION → Example: 1 study
+   - THIS NUMBER is what you must report as "number_of_studies"
+   - Example: TABLE1_CSV has 2 studies, TABLE2_CSV has 1 study → "number_of_studies": 1 (the INTERSECTION!)
+   - ❌ WRONG: Reporting 2 studies (TABLE1 count only)
+   - ❌ WRONG: Reporting 3 studies (inventing studies)
+   - ✅ CORRECT: Reporting 1 study (INTERSECTION only)
+
+   **COMPARATOR VALIDATION:**
+   - For EACH study_id in the INTERSECTION (studies in both tables), read the actual "comparator_name" value from TABLE1_CSV
+   - Example: If comparator_name is "trastuzumab alone" → The study compares to trastuzumab alone
+   - ❌ WRONG: Claiming comparator is "chemotherapy alone" when it's actually "trastuzumab alone"
+   - ❌ WRONG: Claiming a study "directly addresses the PICO" when comparator_name doesn't match PICO.Comparator
+   - ❌ WRONG: Including data from studies NOT in the INTERSECTION (not in both tables)
+   - ✅ CORRECT: If PICO requires "chemotherapy alone" and ALL studies in INTERSECTION have different comparators → State "NO direct evidence"
+
+   **INTERVENTION VALIDATION:**
+   - For EACH study_id, read the actual "intervention_name" value from TABLE1_CSV
+   - Only claim intervention matches PICO if intervention_name clearly contains the required components
+   - ❌ WRONG: Claiming intervention matches when it contains different drugs
+
+   **EFFECT ESTIMATES VALIDATION:**
+   - ONLY report effect estimates that appear in TABLE2_CSV for that study_id
+   - If TABLE2_CSV shows "not reported" → You must say "not reported"
+   - ❌ WRONG: Making up HR values or confidence intervals
+   - ✅ CORRECT: "Effect estimates were not reported" if that's what TABLE2_CSV shows
+
+   **PICO ALIGNMENT ENFORCEMENT:**
+   - If ALL studies have comparators different from PICO.Comparator:
+     * You MUST state: "None of the included studies directly address the planned comparison"
+     * You MUST set: "overall_direction_of_effect": "uncertain"
+     * You MUST explain: What the actual comparators were
+     * You MUST add limitation: "Required comparator (chemotherapy alone) not present in any study"
+
+Do NOT describe any of this reasoning in your answer; just use it.
+
+------------------------------------------------------------
+TASK (WHAT YOU MUST OUTPUT)
+------------------------------------------------------------
+
+Write a SHORT narrative summary of the evidence AND explicitly
+comment on how well the included studies match the original PICO/question.
+
+**WRITING RULES TO PREVENT FABRICATION:**
+
+Before writing each sentence, ask yourself:
+- Did I filter TABLE1_CSV to only decision="include" rows?
+- Is this information actually in the filtered TABLE1_CSV or TABLE2_CSV?
+- Am I about to contradict something I just wrote?
+- Am I claiming a comparator that doesn't match the comparator_name values?
+- Am I including excluded studies in my narrative?
+
+You must:
+
+1. **Describe what was ACTUALLY studied (use INTERSECTION studies only):**
+   - FIRST: Identify which study_ids appear in BOTH TABLE1_CSV and TABLE2_CSV (INTERSECTION)
+   - SECOND: For studies in INTERSECTION only:
+     * Population: Use actual population_description values from TABLE1_CSV
+     * Intervention: Use actual intervention_name values from TABLE1_CSV
+     * Comparator: Use EXACT comparator_name values from TABLE1_CSV (DO NOT substitute!)
+
+   **WRONG EXAMPLE (counting all studies in one table):**
+   "Two studies were included..."
+   (when TABLE1_CSV has 2 studies but TABLE2_CSV only has 1 of them)
+
+   **CORRECT EXAMPLE (counting only INTERSECTION):**
+   "One study was included, comparing trastuzumab emtansine (T-DM1) versus trastuzumab."
+   (TABLE1_CSV has 2 studies [28581356, 30516102], TABLE2_CSV has 1 study [30516102], INTERSECTION = 1 study)
+
+   **WRONG EXAMPLE (wrong comparator):**
+   "Three studies compared trastuzumab plus chemotherapy versus chemotherapy alone"
+   (when TABLE1_CSV shows comparator_name = "trastuzumab alone")
+
+   **CORRECT EXAMPLE (exact comparator):**
+   "Three studies were included. The interventions varied: trastuzumab plus chemotherapy (2 studies),
+   T-DM1 (1 study). The comparators used were: trastuzumab alone (2 studies), T-DM1 (1 study)."
+
+2. **Explicitly comment on PICO alignment (MUST BE HONEST):**
+   - First, check: Do ANY studies in the INTERSECTION have comparator_name matching PICO.Comparator?
+   - If YES → State: "X studies directly addressed the planned comparison"
+   - If NO → State: "None of the included studies directly address the planned comparison (intervention vs comparator as specified in PICO). The actual comparisons were: [list them]"
+
+   **CRITICAL:** If NO studies in INTERSECTION match PICO comparator, you CANNOT claim they do!
+   **CRITICAL:** Only check studies that appear in BOTH TABLE1_CSV and TABLE2_CSV!
+
+3. **Summarize direction of effect ONLY if direct_PICO studies exist:**
+   - If NO direct_PICO studies → Set "overall_direction_of_effect": "uncertain"
+   - State: "The direction of effect cannot be determined because no studies directly addressed the planned comparison"
+   - Do NOT summarize effects from studies with wrong comparators as if they answer the PICO
+
+4. **Be honest about data availability:**
+   - If TABLE2_CSV shows "not reported" → Say "not reported"
+   - Do NOT invent HR values, confidence intervals, or p-values
+   - If only 1 study has data → Say "only one study reported..."
+
+5. **Check for self-contradiction and repetition:**
+   - Read your narrative before finalizing
+   - If you say "comparing X vs Y" anywhere, that MUST match the comparator_name values
+   - Do NOT say "X vs Y" in paragraph 1 and "A vs B" in paragraph 2
+   - **DO NOT repeat the same sentence or information multiple times**
+   - If you stated PICO mismatch once, do NOT repeat it again
+   - Each paragraph should contain NEW information, not repetition
+
+**NARRATIVE LENGTH - STRICTLY ENFORCE:**
+- Write EXACTLY 2-4 short paragraphs (NO MORE!)
+- Each paragraph: 2-4 sentences MAXIMUM
+- Total: approximately 150-300 words
+- **STOP after writing 4 paragraphs - do NOT continue**
+- **DO NOT repeat yourself** - say each point ONCE only
+
+**REMEMBER:** Honesty about lack of PICO-matching studies is MORE VALUABLE than fabricating a positive synthesis!
+
+🛑 CRITICAL: DO NOT REPEAT YOURSELF 🛑
+- If you stated "The actual comparators used were..." ONCE, do NOT repeat it
+- If you stated "No studies compared to chemotherapy alone" ONCE, do NOT repeat it
+- If you stated "PICO not matched" ONCE, do NOT repeat it
+- Each piece of information should appear ONCE ONLY in your narrative
+- STOP after 3-4 paragraphs, do NOT continue writing
+
+============================================================
+⚠️⚠️⚠️ OUTPUT FORMAT - MANDATORY - NO EXCEPTIONS ⚠️⚠️⚠️
+============================================================
+
+🚨 YOU MUST RETURN ONLY VALID JSON 🚨
+
+ABSOLUTELY NO PLAIN TEXT. ABSOLUTELY NO MARKDOWN. ONLY JSON.
+
+Your ENTIRE response must be a single JSON object:
+- First character: {
+- Last character: }
+- Nothing before the {
+- Nothing after the }
+
+❌ WRONG: "Here is the synthesis: {...}"
+❌ WRONG: ```json {...} ```
+❌ WRONG: Plain text explanation
+✅ CORRECT: {...}
+
+**CORRECT FORMAT (copy this structure exactly):**
+
+{
+  "narrative_markdown": "Your narrative text here. Can span multiple lines and include markdown formatting.",
+  "summary": {
+    "one_sentence": "A single sentence summarizing the key finding.",
+    "question": "Brief restatement of the research question.",
+    "number_of_studies": 5,
+    "main_outcome": "5-year disease-free survival",
+    "overall_direction_of_effect": "benefit",
+    "key_findings": [
+      "First key finding",
+      "Second key finding"
+    ],
+    "limitations": [
+      "First limitation",
+      "Second limitation"
+    ]
+  }
+}
+
+**FIELD REQUIREMENTS:**
+
+- "narrative_markdown":
+  - 2-4 short paragraphs describing the evidence
+  - Can use markdown formatting
+  - Must explicitly state PICO alignment
+
+- "summary.one_sentence":
+  - Single clear sentence summarizing the main finding AND PICO alignment
+  - MUST be consistent with the narrative_markdown
+  - MUST reflect the actual number of included studies (with decision="include")
+  - MUST NOT claim benefits if overall_direction_of_effect="uncertain"
+  - **MUST explicitly state whether studies directly address the original question/PICO**
+
+  **If studies MATCH PICO (direct answer):**
+  - Example: "Three studies directly addressing the planned comparison found that adjuvant trastuzumab plus chemotherapy significantly reduces disease-free survival events compared to chemotherapy alone in early-stage HER2-positive breast cancer."
+  - Key phrase: "directly addressing the planned comparison"
+
+  **If studies DON'T MATCH PICO (uncertain answer):**
+  - Example: "One study found benefits with pertuzumab plus trastuzumab plus chemotherapy versus placebo plus trastuzumab plus chemotherapy, but did not directly address the planned comparison (trastuzumab plus chemotherapy versus chemotherapy alone), making the answer to the original question uncertain."
+  - Key phrase: "did not directly address the planned comparison" + "making the answer uncertain"
+
+- "summary.number_of_studies":
+  - CRITICAL: Count data rows in TABLE2_CSV (excluding header)
+  - If TABLE2_CSV has 2 data rows → "number_of_studies": 2
+  - If TABLE2_CSV has 1 data row → "number_of_studies": 1
+  - If TABLE2_CSV has 3 data rows → "number_of_studies": 3
+  - Must be an integer, not a string
+  - ❌ WRONG: Filtering based on PICO match
+  - ❌ WRONG: Filtering based on outcome timepoints
+  - ✅ CORRECT: Count ALL rows in TABLE2_CSV
+
+- "summary.main_outcome":
+  - The main outcome you focused on (e.g., "5-year disease-free survival")
+  - Or "unclear" if no suitable outcome available
+
+- "summary.overall_direction_of_effect":
+  - Must be one of: "benefit", "no_clear_difference", "harm", or "uncertain"
+  - Use "benefit"/"no_clear_difference"/"harm" ONLY if direct_PICO evidence exists among INTERSECTION studies (in both tables)
+  - Use "uncertain" if NO direct_PICO studies or data too sparse
+  - MUST be consistent with narrative_markdown and one_sentence summary
+
+- "summary.key_findings":
+  - List of 2-5 key findings as strings
+  - MUST be based on INTERSECTION studies only (appearing in both TABLE1 and TABLE2)
+
+- "summary.limitations":
+  - List of 2-5 limitations as strings
+  - MUST include "No studies matched the planned comparison" if PICO not matched
+
+**CONSISTENCY CHECK:**
+- The one_sentence summary MUST match the narrative_markdown
+- The number_of_studies MUST match the count in narrative_markdown
+- The overall_direction_of_effect MUST match what's described in narrative_markdown
+- If narrative says "One study" → one_sentence must also say "One study" (NOT "Three studies")
+- **If narrative states PICO not matched → one_sentence MUST say "did not directly address the planned comparison" + "answer uncertain"**
+- **If narrative states PICO matched → one_sentence MUST say "directly addressing the planned comparison"**
+
+**CRITICAL RULES:**
+
+1. ❌ Do NOT wrap the JSON in code fences (no ```json or ```)
+2. ❌ Do NOT add any text before or after the JSON
+3. ❌ Do NOT include comments in the JSON
+4. ✅ DO ensure all strings use double quotes (not single quotes)
+5. ✅ DO ensure the JSON is valid and can be parsed
+6. ✅ DO start your response with { and end with }
+
+**EXAMPLE OUTPUT 1 (Studies MATCH PICO - Direct Answer):**
+
+{
+  "narrative_markdown": "The evidence synthesis examined studies on [disease/condition]. Three randomized controlled trials were included, comparing [intervention name] versus [comparator name].\n\nThe primary outcome was [outcome name]. All three studies showed a consistent benefit favoring the [intervention], with effect estimates of [actual values from data].\n\nLimitations include moderate heterogeneity in follow-up duration and some missing data for secondary outcomes.",
+  "summary": {
+    "one_sentence": "Three studies directly addressing the planned comparison found that [intervention name] significantly [improves/reduces] [outcome] compared to [comparator name] in [population].",
+    "question": "[Restate the actual question from QUESTION_TEXT]",
+    "number_of_studies": 3,
+    "main_outcome": "[actual outcome name from data]",
+    "overall_direction_of_effect": "benefit",
+    "key_findings": [
+      "All three studies demonstrated [finding from actual data]",
+      "[Second finding from actual data]",
+      "[Third finding from actual data]"
+    ],
+    "limitations": [
+      "Heterogeneity in follow-up duration",
+      "Limited long-term safety data",
+      "Some missing outcome data"
+    ]
+  }
+}
+
+**EXAMPLE OUTPUT 2 (Studies DON'T MATCH PICO - Uncertain Answer):**
+
+NOTE: This narrative is 3 paragraphs, approximately 100 words. It states PICO mismatch ONCE (in paragraph 2) and STOPS. NO REPETITION. This is the CORRECT format.
+
+{
+  "narrative_markdown": "One study was included, enrolling [N] patients with [population description from CSV]. The study compared [intervention name from CSV] versus [comparator name from CSV].\n\nNone of the included studies directly address the planned comparison ([PICO intervention] versus [PICO comparator]). The actual comparator used was [actual comparator from CSV], which differs from the specified comparator of [PICO comparator].\n\nThe direction of effect cannot be determined because no studies directly addressed the planned comparison.",
+  "summary": {
+    "one_sentence": "One study found [benefit/harm/effect] with [intervention from CSV] versus [comparator from CSV], but did not directly address the planned comparison ([PICO intervention] versus [PICO comparator]), making the answer to the original question uncertain.",
+    "question": "[Actual question from QUESTION_TEXT]",
+    "number_of_studies": 1,
+    "main_outcome": "[actual outcome from data]",
+    "overall_direction_of_effect": "uncertain",
+    "key_findings": [
+      "One study showed [finding from actual data]",
+      "Comparison was against [actual comparator], not [PICO comparator] as specified"
+    ],
+    "limitations": [
+      "No studies matched the planned comparison",
+      "Actual comparator was [actual from CSV], not [PICO comparator] as specified"
+    ]
+  }
+}
+
+============================================================
+🚨 FINAL REMINDER - ABSOLUTELY CRITICAL 🚨
+============================================================
+
+YOUR RESPONSE MUST BE VALID JSON ONLY.
+
+DO NOT WRITE:
+- "Evidence synthesis completed"
+- "Here is the synthesis"
+- Any plain text explanation
+- Any markdown formatting
+
+YOUR FIRST CHARACTER MUST BE: {
+YOUR LAST CHARACTER MUST BE: }
+
+BETWEEN { AND } MUST BE VALID JSON FOLLOWING THE STRUCTURE ABOVE.
+
+NO OTHER TEXT ALLOWED.
+
+============================================================
+⚠️ FINAL VALIDATION BEFORE YOU RESPOND ⚠️
+============================================================
+
+Before writing your JSON response, complete this mental checklist:
+
+**STEP 1: COUNT ROWS IN TABLE2_CSV**
+- Go back and look at TABLE2_CSV
+- Count EVERY data row (not the header)
+- Write down: "I counted X rows in TABLE2_CSV"
+- Your number_of_studies MUST equal X
+
+**STEP 2: LIST ALL STUDY_IDS FROM TABLE2_CSV**
+- Go through TABLE2_CSV row by row
+- Write down EVERY study_id: [id1, id2, id3, ...]
+- These are ALL the studies you MUST discuss
+
+**STEP 3: CHECK YOUR NARRATIVE**
+- Did you mention EVERY study_id from Step 2?
+- Did you skip any study_id? → GO BACK and add it
+- Does your count match Step 1? → If not, FIX IT
+
+**EXAMPLE CHECKLIST:**
+✓ TABLE2_CSV has 2 rows → number_of_studies = 2
+✓ Study IDs in TABLE2: [28581356, 30516102]
+✓ Narrative mentions 28581356 ✓
+✓ Narrative mentions 30516102 ✓
+✓ Ready to respond!
+
+============================================================
+⚠️ CRITICAL: DO NOT COPY EXAMPLE TEXT ⚠️
+============================================================
+
+The examples above use placeholder terms like "[intervention name]", "[comparator name]",
+"[population]", etc. These are PLACEHOLDERS ONLY.
+
+YOU MUST:
+- Read the ACTUAL data from TABLE1_CSV and TABLE2_CSV
+- Use the REAL intervention_name, comparator_name, and population_description values
+- Extract the REAL effect estimates from the outcome data
+- Reference the ACTUAL question from QUESTION_TEXT
+
+DO NOT:
+- Copy placeholder text like "[intervention name]" into your response
+- Use terms from the examples (they are generic examples only)
+- Invent data that is not in the CSV files
+- Make assumptions about what the study might have compared
+- Filter out studies based on PICO match
+
+READ THE CSV FILES. COUNT ALL ROWS IN TABLE2. USE ACTUAL DATA.
+
+------------------------------------------------------------
+EXAMPLES OF WRONG RESPONSES (DO NOT DO THIS)
+------------------------------------------------------------
+
+WRONG RESPONSE (do NOT do this):
+thought Let me synthesize the evidence from these studies...
+{"narrative_markdown": "...", "summary": {...}}
+
+WRONG RESPONSE (do NOT do this):
+Evidence synthesis completed.
+{"narrative_markdown": "...", "summary": {...}}
+
+WRONG RESPONSE (do NOT do this):
+```json
+{"narrative_markdown": "...", "summary": {...}}
+```
+
+CORRECT RESPONSE (do this):
+{"narrative_markdown": "...", "summary": {...}}

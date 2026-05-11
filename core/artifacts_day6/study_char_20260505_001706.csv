@@ -1,0 +1,11 @@
+study_id,first_author,year,journal,country_or_setting,population_description,sample_size_total,intervention_name,comparator_name
+38471061,,,,,Adults with FLT3-ITD AML in first remission who underwent allogeneic hematopoietic cell transplantation (HCT).,356,Gilteritinib maintenance (120 mg once daily for 24 months),Placebo
+39775763,,,,,Adults with FLT3-ITD-mutated acute myeloid leukemia (AML) who have undergone hematopoietic cell transplantation (HCT).,,gilteritinib maintenance therapy,placebo
+32673171,,,,,Adult patients with FLT3-ITD-positive acute myeloid leukemia in complete hematologic remission after allogeneic hematopoietic stem cell transplantation.,83,Sorafenib maintenance therapy,Placebo
+40079105,,,,,Newly diagnosed FLT3-ITD-positive acute myeloid leukemia patients who underwent allogeneic hematopoietic cell transplantation in first complete remission (CR1) or composite CR1 (CRc1).,196,Quizartinib maintenance,Placebo maintenance
+40590852,,,,,Patients with FLT3-ITD-mutated acute myeloid leukemia (AML) undergoing allogeneic hematopoietic cell transplantation (HCT).,,Gilteritinib maintenance therapy,Placebo maintenance
+39167766,,,,,Adults with FLT3-ITD+ acute myeloid leukemia (AML) who had undergone allogeneic hematopoietic cell transplantation (HCT).,,gilteritinib maintenance,placebo
+37414062,,,,China,"Adults aged 18-60 years with FLT3-ITD acute myeloid leukaemia who underwent allogeneic HSCT, had ECOG PS 0-2, composite complete remission before and after transplantation, and hematopoietic recovery within 60 days post-transplant.",202,Sorafenib maintenance,No TKI maintenance
+37704613,,,,,Patients with FLT3-ITD acute myeloid leukemia (AML) undergoing allogeneic hematopoietic stem cell transplantation.,613,sorafenib maintenance,no sorafenib maintenance
+40577201,,,,,FLT3-mutated acute myeloid leukemia patients who underwent allogeneic hematopoietic stem cell transplantation.,48,Sorafenib maintenance,No TKI maintenance
+32791048,,,,China,"Adults (18-60 years) with FLT3-ITD acute myeloid leukemia who underwent allogeneic hematopoietic stem-cell transplantation, had composite complete remission before and after transplantation, and hematopoietic recovery within 60 days post-transplantation.",202,Sorafenib maintenance (400 mg orally twice daily),Non-maintenance (control)
