@@ -36,6 +36,88 @@ os.chdir(_CORE_DIR)
 BENCH_DEFAULT = _CORE_DIR.parent.parent / "TrialReviewBench" / "TrialReviewBench-study-search-screening.jsonl"
 
 
+# ── LLM backend override: route mesh_basic / mesh_expand through Gemini 2.5 Pro
+# Done here (in the evaluator only) so the rest of the pipeline keeps its
+# configured backend untouched. Patches the `_agent` factory in each module
+# after import so generate_*_mesh_query picks up the override transparently.
+
+_GEMINI_PRO_MODEL = "gemini-2.5-pro"
+
+
+def _make_gemini_pro_agent(max_tokens: int = 8000, temperature: float = 0.0):
+    from agents.factory import build_vertex_gemini_agent
+    from configs.env_config import config
+    return build_vertex_gemini_agent(
+        project_id=config.GCP_PROJECT_ID,
+        location=config.GEMINI_LOCATION,
+        model=_GEMINI_PRO_MODEL,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+
+
+def _patch_mesh_agents_to_gemini_pro():
+    """Replace `_agent` in mesh_basic / mesh_expand so the eval runs on Gemini 2.5 Pro."""
+    try:
+        from meshOnDemand import mesh_basic
+        mesh_basic._agent = lambda: _make_gemini_pro_agent(max_tokens=2000, temperature=0.2)
+    except Exception as e:
+        print(f"[warn] could not patch mesh_basic._agent: {e}")
+    try:
+        from meshOnDemand import mesh_expand
+        mesh_expand._agent = lambda: _make_gemini_pro_agent(max_tokens=8000)
+    except Exception as e:
+        print(f"[warn] could not patch mesh_expand._agent: {e}")
+
+
+def _suppress_artifact_writes():
+    """
+    Suppress per-case temp writes from mesh_basic / mesh_expand.
+
+    Those modules dump mesh_basic_<qid>.txt, mesh_basic_parsed<qid>.json,
+    pubmed_parsed<qid>.json, mesh_query.jsonl, mesh_expand_<qid>.txt, etc.
+    into core/artifacts_day3/ as a side effect of generate_*_mesh_query.
+    For batch eval only the aggregated bench CSV matters, so silently
+    redirect any write to an `artifacts_day*` path to a no-op.
+
+    Patches pathlib.Path.write_text, Path.mkdir, and builtins.open.
+    The bench CSV (in evals/) is unaffected — only paths whose string
+    representation contains '/artifacts_day' are swallowed.
+    """
+    import builtins
+    import os as _os
+    from pathlib import Path as _Path
+
+    _orig_write_text = _Path.write_text
+    _orig_mkdir      = _Path.mkdir
+    _orig_open       = builtins.open
+
+    def _is_artifact(p) -> bool:
+        try:
+            return "artifacts_day" in str(p)
+        except Exception:
+            return False
+
+    def _patched_write_text(self, *a, **kw):
+        if _is_artifact(self):
+            return 0
+        return _orig_write_text(self, *a, **kw)
+
+    def _patched_mkdir(self, *a, **kw):
+        if _is_artifact(self):
+            return None
+        return _orig_mkdir(self, *a, **kw)
+
+    def _patched_open(file, *a, **kw):
+        if _is_artifact(file):
+            return _orig_open(_os.devnull, *a, **kw)
+        return _orig_open(file, *a, **kw)
+
+    _Path.write_text = _patched_write_text
+    _Path.mkdir      = _patched_mkdir
+    builtins.open    = _patched_open
+
+
 # ── recall helpers ────────────────────────────────────────────────────────────
 
 def recall(retrieved: set, gt: set) -> float:
@@ -361,7 +443,7 @@ def main():
     parser.add_argument(
         "--out",
         default=None,
-        help="Output CSV path (default: bench_recall_<timestamp>.csv in artifacts_day5/)",
+        help="Output CSV path (default: bench_recall_<timestamp>.csv in evals/)",
     )
     parser.add_argument(
         "--limit",
@@ -462,6 +544,17 @@ def main():
             print("[warn] --exclude-reviews only applies to --strategy expand; ignored for basic")
         from meshOnDemand.mesh_basic import generate_basic_mesh_query as query_builder
 
+    # Route mesh term extraction through Gemini 2.5 Pro instead of the
+    # default medgemma (:predict) endpoint. Eval-scoped override only.
+    _patch_mesh_agents_to_gemini_pro()
+    print(f"LLM backend  : Gemini 2.5 Pro (eval override)")
+
+    # Drop per-case temp writes (mesh_basic_*.txt, pubmed_parsed*.json, ...)
+    # that mesh_basic / mesh_expand normally dump into core/artifacts_day3/.
+    # Only the bench CSV (in evals/) is kept.
+    _suppress_artifact_writes()
+    print(f"artifacts    : suppressed (only bench CSV will be written)")
+
     if args.multi_sort and args.by_decade:
         sys.exit("ERROR: --multi-sort and --by-decade are mutually exclusive.")
 
@@ -547,7 +640,7 @@ def main():
     if args.out:
         out_path = Path(args.out)
     else:
-        artifacts_dir = Path(__file__).resolve().parent / "artifacts_day5"
+        artifacts_dir = Path(__file__).resolve().parent / "evals"
         artifacts_dir.mkdir(exist_ok=True)
         parts = [args.strategy]
         if args.multi_sort:
