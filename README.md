@@ -1,4 +1,4 @@
-# REASON
+# AI-Assisted Pipeline for Cancer Trial Evidence Synthesis
 
 **Retrieval-enhanced Evidence Assessment with Synthesis and Organized Narration** — an end-to-end agent-based LLM pipeline that takes a free-text clinical question and produces a PRISMA-2020-aligned systematic-review PDF.
 
