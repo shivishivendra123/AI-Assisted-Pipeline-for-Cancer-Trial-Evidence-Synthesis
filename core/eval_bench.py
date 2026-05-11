@@ -36,6 +36,157 @@ os.chdir(_CORE_DIR)
 BENCH_DEFAULT = _CORE_DIR.parent.parent / "TrialReviewBench" / "TrialReviewBench-study-search-screening.jsonl"
 
 
+# ── LLM backend override: route mesh_basic / mesh_expand through Gemini 2.5 Flash
+# Done here (in the evaluator only) so the rest of the pipeline keeps its
+# configured backend untouched. Patches the `_agent` factory in each module
+# after import so generate_*_mesh_query picks up the override transparently.
+
+_GEMINI_PRO_MODEL = "gemini-2.5-pro"
+
+
+def _make_gemini_pro_agent(max_tokens: int = 8000, temperature: float = 0.0):
+    from agents.factory import build_vertex_gemini_agent
+    from configs.env_config import config
+    return build_vertex_gemini_agent(
+        project_id=config.GCP_PROJECT_ID,
+        location=config.GEMINI_LOCATION,
+        model=_GEMINI_PRO_MODEL,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+
+
+def _patch_mesh_agents_to_gemini_pro():
+    """Replace `_agent` in mesh_basic / mesh_expand so the eval runs on Gemini 2.5 Flash."""
+    try:
+        from meshOnDemand import mesh_basic
+        mesh_basic._agent = lambda: _make_gemini_pro_agent(max_tokens=2000, temperature=0.2)
+    except Exception as e:
+        print(f"[warn] could not patch mesh_basic._agent: {e}")
+    try:
+        from meshOnDemand import mesh_expand
+        mesh_expand._agent = lambda: _make_gemini_pro_agent(max_tokens=8000)
+    except Exception as e:
+        print(f"[warn] could not patch mesh_expand._agent: {e}")
+
+
+def _suppress_artifact_writes():
+    """
+    Suppress per-case temp writes from mesh_basic / mesh_expand.
+
+    Those modules dump mesh_basic_<qid>.txt, mesh_basic_parsed<qid>.json,
+    pubmed_parsed<qid>.json, mesh_query.jsonl, mesh_expand_<qid>.txt, etc.
+    into core/artifacts_day3/ as a side effect of generate_*_mesh_query.
+    For batch eval only the aggregated bench CSV matters, so silently
+    redirect any write to an `artifacts_day*` path to a no-op.
+
+    Patches pathlib.Path.write_text, Path.mkdir, and builtins.open.
+    The bench CSV (in evals/) is unaffected — only paths whose string
+    representation contains '/artifacts_day' are swallowed.
+    """
+    import builtins
+    import os as _os
+    from pathlib import Path as _Path
+
+    _orig_write_text = _Path.write_text
+    _orig_mkdir      = _Path.mkdir
+    _orig_open       = builtins.open
+
+    def _is_artifact(p) -> bool:
+        try:
+            return "artifacts_day" in str(p)
+        except Exception:
+            return False
+
+    def _patched_write_text(self, *a, **kw):
+        if _is_artifact(self):
+            return 0
+        return _orig_write_text(self, *a, **kw)
+
+    def _patched_mkdir(self, *a, **kw):
+        if _is_artifact(self):
+            return None
+        return _orig_mkdir(self, *a, **kw)
+
+    def _patched_open(file, *a, **kw):
+        if _is_artifact(file):
+            return _orig_open(_os.devnull, *a, **kw)
+        return _orig_open(file, *a, **kw)
+
+    _Path.write_text = _patched_write_text
+    _Path.mkdir      = _patched_mkdir
+    builtins.open    = _patched_open
+
+
+def _patch_expand_terms_per_axis(per_axis_cap: int):
+    """
+    Raise the per-axis term cap in mesh_expand from the default 8 → `per_axis_cap`,
+    and rewrite the prompt count hints so the LLM emits enough terms to fill it.
+
+    Patches:
+      - mesh_expand._parse_axes  (replaces the local AXIS_CAP=8 with the new cap)
+      - mesh_expand._load_prompt (replaces '3–5 terms' / '2–3 terms' hints with
+                                  half-of-cap each across CORE + EXPAND)
+
+    No-op for --strategy basic (mesh_basic has its own MAX_TERMS path).
+    """
+    if per_axis_cap is None or per_axis_cap <= 0:
+        return
+
+    from meshOnDemand import mesh_expand
+    import json as _json
+
+    # ── 1. Replace _parse_axes with a version using the configurable cap.
+    def _parse_axes(response: str):
+        cleaned = mesh_expand._clean_json(response)
+        s2, s3 = {}, {}
+        try:
+            data = _json.loads(cleaned)
+            s2 = data.get("step 2", {}) or {}
+            s3 = data.get("step 3", {}) or {}
+        except Exception:
+            for key in (
+                "CORE_CONDITIONS", "CORE_TREATMENTS", "CORE_OUTCOMES",
+                "EXPAND_CONDITIONS", "EXPAND_TREATMENTS", "EXPAND_OUTCOMES",
+            ):
+                terms = mesh_expand._extract_axis_regex(cleaned, key)
+                (s2 if key.startswith("CORE_") else s3)[key] = terms
+
+        def merged(core_key, expand_key):
+            combined = (s2.get(core_key) or []) + (s3.get(expand_key) or [])
+            return mesh_expand._dedupe_with_near(combined)[:per_axis_cap]
+
+        return {
+            "conditions": merged("CORE_CONDITIONS", "EXPAND_CONDITIONS"),
+            "treatments": merged("CORE_TREATMENTS", "EXPAND_TREATMENTS"),
+            "outcomes":   merged("CORE_OUTCOMES",   "EXPAND_OUTCOMES"),
+        }
+
+    mesh_expand._parse_axes = _parse_axes
+
+    # ── 2. Rewrite prompt count hints so the LLM produces enough terms to fill
+    # the new cap after dedup. Ask for ~cap/2 CORE + ~cap/2 EXPAND per axis,
+    # padded by +1 to absorb dedup/near-dup losses.
+    half = max(1, per_axis_cap // 2)
+    lo, hi = half, half + 1
+    _original_load_prompt = mesh_expand._load_prompt
+    def _load_prompt_patched() -> str:
+        txt = _original_load_prompt()
+        replacements = [
+            ("CORE_CONDITIONS: 3–5 terms",   f"CORE_CONDITIONS: {lo}–{hi} terms"),
+            ("CORE_TREATMENTS: 3–5 terms",   f"CORE_TREATMENTS: {lo}–{hi} terms"),
+            ("CORE_OUTCOMES:   2–3 terms",   f"CORE_OUTCOMES:   {lo}–{hi} terms"),
+            ("EXPAND_CONDITIONS: 3–5 terms", f"EXPAND_CONDITIONS: {lo}–{hi} terms"),
+            ("EXPAND_TREATMENTS: 3–5 terms", f"EXPAND_TREATMENTS: {lo}–{hi} terms"),
+            ("EXPAND_OUTCOMES:   3–5 terms", f"EXPAND_OUTCOMES:   {lo}–{hi} terms"),
+        ]
+        for old, new in replacements:
+            txt = txt.replace(old, new)
+        return txt
+
+    mesh_expand._load_prompt = _load_prompt_patched
+
+
 # ── recall helpers ────────────────────────────────────────────────────────────
 
 def recall(retrieved: set, gt: set) -> float:
@@ -361,7 +512,7 @@ def main():
     parser.add_argument(
         "--out",
         default=None,
-        help="Output CSV path (default: bench_recall_<timestamp>.csv in artifacts_day5/)",
+        help="Output CSV path (default: bench_recall_<timestamp>.csv in evals/)",
     )
     parser.add_argument(
         "--limit",
@@ -446,6 +597,15 @@ def main():
              "outranked by review-class papers in Best Match / iCite. Standard "
              "Cochrane SR retrieval methodology. Only affects the expand strategy.",
     )
+    parser.add_argument(
+        "--terms-per-axis",
+        type=int,
+        default=None,
+        help="Override the per-axis term cap in --strategy expand (default 8). "
+             "Raises mesh_expand AXIS_CAP and rewrites the prompt count hints "
+             "(CORE + EXPAND) so the LLM emits enough terms to fill the cap "
+             "after dedup. Use 15 for fat-OR per axis. No-op for --strategy basic.",
+    )
     args = parser.parse_args()
 
     # Late imports so CLI arg errors surface before heavy imports
@@ -461,6 +621,24 @@ def main():
         if args.exclude_reviews:
             print("[warn] --exclude-reviews only applies to --strategy expand; ignored for basic")
         from meshOnDemand.mesh_basic import generate_basic_mesh_query as query_builder
+
+    # Route mesh term extraction through Gemini 2.5 Flash instead of the
+    # default medgemma (:predict) endpoint. Eval-scoped override only.
+    _patch_mesh_agents_to_gemini_pro()
+    print(f"LLM backend  : Gemini 2.5 Flash (eval override)")
+
+    # Drop per-case temp writes (mesh_basic_*.txt, pubmed_parsed*.json, ...)
+    # that mesh_basic / mesh_expand normally dump into core/artifacts_day3/.
+    # Only the bench CSV (in evals/) is kept.
+    _suppress_artifact_writes()
+    print(f"artifacts    : suppressed (only bench CSV will be written)")
+
+    # Optional: bump per-axis term cap (and prompt count hints) for --strategy expand.
+    if args.terms_per_axis and args.strategy == "expand":
+        _patch_expand_terms_per_axis(args.terms_per_axis)
+        print(f"axis cap     : {args.terms_per_axis} terms / axis (prompt + parser patched)")
+    elif args.terms_per_axis and args.strategy != "expand":
+        print(f"[warn] --terms-per-axis only applies to --strategy expand; ignored for {args.strategy}")
 
     if args.multi_sort and args.by_decade:
         sys.exit("ERROR: --multi-sort and --by-decade are mutually exclusive.")
@@ -547,7 +725,7 @@ def main():
     if args.out:
         out_path = Path(args.out)
     else:
-        artifacts_dir = Path(__file__).resolve().parent / "artifacts_day5"
+        artifacts_dir = Path(__file__).resolve().parent / "evals"
         artifacts_dir.mkdir(exist_ok=True)
         parts = [args.strategy]
         if args.multi_sort:
