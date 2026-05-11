@@ -1,10 +1,10 @@
 import os
 from agents.factory import build_vertex_agent
 
-PROJECT_ID  = os.getenv("PROJECT_ID",  "evidence-synthesis-gemma")
-LOCATION    = os.getenv("LOCATION",    "us-central1")
-ENDPOINT_ID = os.getenv("ENDPOINT_ID", "mg-endpoint-0f4af99c-9fde-4bd7-8966-8d155e5c91f9")
-DEDICATED_DNS = "mg-endpoint-0f4af99c-9fde-4bd7-8966-8d155e5c91f9.us-central1-1050333749476.prediction.vertexai.goog"
+PROJECT_ID    = os.getenv("PROJECT_ID",    "")
+LOCATION      = os.getenv("LOCATION",      "us-central1")
+ENDPOINT_ID   = os.getenv("ENDPOINT_ID",   "")
+DEDICATED_DNS = os.getenv("DEDICATED_DNS", "")
 
 agent = build_vertex_agent(
     project_id=PROJECT_ID,

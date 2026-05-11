@@ -1,0 +1,34 @@
+{
+ "step 1": "This search focuses on adult breast cancer patients undergoing cytotoxic chemotherapy, specifically comparing pegfilgrastim and filgrastim for preventing febrile neutropenia. Key concepts include the primary disease, the G-CSF interventions, and the specific hematologic complication.",
+ "step 2": {
+ "CORE_CONDITIONS": [
+ "breast cancer",
+ "chemotherapy-induced neutropenia"
+ ],
+ "CORE_TREATMENTS": [
+ "pegfilgrastim",
+ "filgrastim"
+ ],
+ "CORE_OUTCOMES": [
+ "febrile neutropenia",
+ "neutropenia"
+ ]
+ },
+ "step 3": {
+ "EXPAND_CONDITIONS": [
+ "breast neoplasms",
+ "breast carcinoma",
+ "early stage breast cancer"
+ ],
+ "EXPAND_TREATMENTS": [
+ "G-CSF",
+ "granulocyte colony-stimulating factor",
+ "hematopoietic growth factors"
+ ],
+ "EXPAND_OUTCOMES": [
+ "leukopenia",
+ "neutropenic fever",
+ "life-threatening infections"
+ ]
+ }
+}

@@ -1,0 +1,3 @@
+study_id,first_author,year,journal,country_or_setting,population_description,sample_size_total,intervention_name,comparator_name
+40811630,,,,multicenter,Adult patients with early breast cancer receiving cytotoxic chemotherapy and requiring prophylactic G-CSF.,233,5-day filgrastim,pegfilgrastim
+37495949,,,,,Early-stage breast cancer patients receiving adjuvant chemotherapy.,,PEG-rhG-CSF,rhG-CSF
