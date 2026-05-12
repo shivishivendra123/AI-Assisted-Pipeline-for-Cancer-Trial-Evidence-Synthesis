@@ -102,6 +102,8 @@ ES_Pipeline/
 
 ## Quickstart
 
+See [SETUP.md](SETUP.md) for step-by-step NCBI and Google Cloud setup.
+
 ### 1. Install dependencies
 
 ```bash
