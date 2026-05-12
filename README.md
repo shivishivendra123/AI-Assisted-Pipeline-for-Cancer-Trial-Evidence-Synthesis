@@ -251,6 +251,4 @@ The benchmark used for evaluation is **TrialReviewBench** (Wang et al.), which w
 
 ---
 
-## License
 
-Released under the [MIT License](LICENSE). Copyright (c) 2026 Shivendra Gupta and Eesha Reddy Alluri.
