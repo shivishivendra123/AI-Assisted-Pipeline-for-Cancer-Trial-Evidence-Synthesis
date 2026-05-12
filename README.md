@@ -236,7 +236,7 @@ Concrete remediation paths: outcome-axis boosting for AE-anchored reviews; regim
 
 ## Citation
 
-If you use REASON in your work, please cite:
+If you use AI-Assisted Pipeline for Cancer Trial Evidence Synthesis in your work, please cite:
 
 ```
 @misc{reason2026,
