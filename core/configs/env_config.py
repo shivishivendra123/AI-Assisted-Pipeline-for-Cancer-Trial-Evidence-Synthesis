@@ -22,13 +22,10 @@ class Config:
     # ==============================================
     # Google Cloud Vertex AI Configuration
     # ==============================================
-    GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "evidence-synthesis-gemma")
+    GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "")
     GCP_LOCATION: str = os.getenv("GCP_LOCATION", "us-east4")
-    GCP_ENDPOINT_ID: str = os.getenv("GCP_ENDPOINT_ID", "mg-endpoint-fc4b2334-585c-4e64-9c0d-df7caee0cf01")
-    GCP_DEDICATED_DNS: str = os.getenv(
-        "GCP_DEDICATED_DNS",
-        "mg-endpoint-fc4b2334-585c-4e64-9c0d-df7caee0cf01.us-east4-132817493282.prediction.vertexai.goog"
-    )
+    GCP_ENDPOINT_ID: str = os.getenv("GCP_ENDPOINT_ID", "")
+    GCP_DEDICATED_DNS: str = os.getenv("GCP_DEDICATED_DNS", "")
 
     # Vertex AI Gemini (separate from the dedicated medgemma endpoint above).
     # Gemini 2.5 Flash is broadly available in us-central1; the medgemma
@@ -39,8 +36,8 @@ class Config:
     # ==============================================
     # PubMed/NCBI API Configuration
     # ==============================================
-    NCBI_EMAIL: str = os.getenv("NCBI_EMAIL", "sgupta13@mail.yu.edu")
-    NCBI_API_KEY: str = os.getenv("NCBI_API_KEY", "dc7de5bfc1cb115021baf6b463aa52728408")
+    NCBI_EMAIL: str = os.getenv("NCBI_EMAIL", "")
+    NCBI_API_KEY: str = os.getenv("NCBI_API_KEY", "")
     PUBMED_MAX_RESULTS: int = int(os.getenv("PUBMED_MAX_RESULTS", "500"))
 
     # ==============================================
@@ -91,12 +88,20 @@ class Config:
         """Validate critical configuration values."""
         errors = []
 
-        # Check for required sensitive values
-        if cls.NCBI_EMAIL == "sgupta13@mail.yu.edu":
-            errors.append("⚠️  NCBI_EMAIL is using default value. Please set your own email in .env")
+        if not cls.NCBI_EMAIL:
+            errors.append("NCBI_EMAIL is not set. Please set it in .env")
 
-        if cls.NCBI_API_KEY == "f5fae3152f30c1cbe67e396db8f3a9247508":
-            errors.append("⚠️  NCBI_API_KEY is using default value. Please set your own API key in .env")
+        if not cls.NCBI_API_KEY:
+            errors.append("NCBI_API_KEY is not set. Please set it in .env")
+
+        if not cls.GCP_PROJECT_ID:
+            errors.append("GCP_PROJECT_ID is not set. Please set it in .env")
+
+        if not cls.GCP_ENDPOINT_ID:
+            errors.append("GCP_ENDPOINT_ID is not set. Please set it in .env")
+
+        if not cls.GCP_DEDICATED_DNS:
+            errors.append("GCP_DEDICATED_DNS is not set. Please set it in .env")
 
         if errors:
             print("\n".join(errors))

@@ -1,0 +1,3 @@
+study_id,comparison_text,outcomes
+40811630,5-day filgrastim vs pegfilgrastim,"[{""outcome_label"": ""incidence of febrile neutropenia"", ""effect_text"": ""6.4% for 5-day filgrastim vs 0.9% for pegfilgrastim (P=0.065)"", ""effect_type"": ""other"", ""effect_value"": null, ""ci_lower"": null, ""ci_upper"": null, ""follow_up_text"": ""not reported""}]"
+37495949,PEG-rhG-CSF vs rhG-CSF,"[{""outcome_label"": ""incidence of febrile neutropenia"", ""effect_text"": ""no significant difference in the incidence of FN in the first cycle among the groups (P=0.203)"", ""effect_type"": ""other"", ""effect_value"": null, ""ci_lower"": null, ""ci_upper"": null, ""follow_up_text"": ""first cycle""}]"
