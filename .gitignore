@@ -60,9 +60,10 @@ tmp/
 temp/
 *.tmp
 
-# Documentation - ignore all .md files except README.md
+# Documentation - ignore all .md files except README.md and SETUP.md
 *.md
 !README.md
+!SETUP.md
 
 .claude
 core/archived_rsults/
