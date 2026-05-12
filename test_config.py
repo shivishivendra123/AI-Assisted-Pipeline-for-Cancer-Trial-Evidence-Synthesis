@@ -18,9 +18,9 @@ def test_config():
 
     try:
         from configs.env_config import config
-        print("✅ Successfully imported configuration module\n")
+        print("Successfully imported configuration module\n")
     except Exception as e:
-        print(f"❌ Failed to import configuration: {e}")
+        print(f"Failed to import configuration: {e}")
         return False
 
     # Display configuration
@@ -34,9 +34,9 @@ def test_config():
     is_valid = config.validate()
 
     if is_valid:
-        print("\n✅ Configuration is valid!")
+        print("\nConfiguration is valid!")
     else:
-        print("\n⚠️  Configuration has warnings (see above)")
+        print("\nConfiguration has warnings (see above)")
         print("   Update your .env file to resolve them.\n")
 
     # Test specific values
@@ -57,9 +57,9 @@ def test_config():
     all_good = True
     for name, value in tests:
         if value:
-            print(f"  ✅ {name}: {value}")
+            print(f"  {name}: {value}")
         else:
-            print(f"  ❌ {name}: Not set!")
+            print(f"  {name}: Not set!")
             all_good = False
 
     # Test imports from other modules
@@ -68,25 +68,25 @@ def test_config():
 
     try:
         from configs.config import PROJECT_ID, LOCATION, ENDPOINT_ID
-        print(f"  ✅ configs.config imports working")
+        print(f"  configs.config imports working")
         print(f"     PROJECT_ID: {PROJECT_ID}")
     except Exception as e:
-        print(f"  ❌ configs.config import failed: {e}")
+        print(f"  configs.config import failed: {e}")
         all_good = False
 
     try:
         from pipeline.extractor.pico_extractor import _agent
-        print(f"  ✅ pico_extractor._agent() can be imported")
+        print(f"  pico_extractor._agent() can be imported")
     except Exception as e:
-        print(f"  ❌ pico_extractor import failed: {e}")
+        print(f"  pico_extractor import failed: {e}")
         all_good = False
 
     # Summary
     print("\n" + "="*70)
     if all_good and is_valid:
-        print("✅ All tests passed! Configuration is ready to use.")
+        print("All tests passed! Configuration is ready to use.")
     else:
-        print("⚠️  Some tests failed or have warnings.")
+        print("Some tests failed or have warnings.")
         print("   Please review the output above and update your .env file.")
     print("="*70 + "\n")
 
